@@ -19,6 +19,7 @@
 struct armMotor {
     int dxl_goal_position[2];
     uint8_t DXL_ID;
+    int32_t dxl_present_position;
 };
 
 class ArmInterface {

@@ -11,6 +11,7 @@ void ArmInterface::setup() {
         motors[i].DXL_ID = i + 1;
         motors[i].dxl_goal_position[0] = MINIMUM_POSITION_LIMIT;
         motors[i].dxl_goal_position[1] = MAXIMUM_POSITION_LIMIT;
+        motors[i].dxl_present_position = 0;
     }
 
     // Obtain the port handler and packet handler without dereferencing.
@@ -65,7 +66,7 @@ void ArmInterface::recv() {
     for (size_t i = 0; i < motors.size(); ++i) {
         dxl_comm_result = packetHandler->read4ByteTxRx(
             portHandler, motors[i].DXL_ID, ADDR_PRESENT_POSITION, 
-            (uint32_t*)&dxl_present_position, &dxl_error);
+            (uint32_t*)&motors[i].dxl_present_position, &dxl_error);
         if (dxl_comm_result != COMM_SUCCESS) {
             printf("Failed to read present position from motor %d: %s\n", 
                    motors[i].DXL_ID, packetHandler->getTxRxResult(dxl_comm_result));
