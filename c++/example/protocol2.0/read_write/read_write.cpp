@@ -22,6 +22,9 @@ int main() {
     // Create an instance of ArmInterface. The constructor will call setup().
     ArmInterface arm;
 
+    std::vector<int32_t> goals = {0, 0, 0, 0, 0, 0, 4095/4};
+
+
     std::cout << "Initialization complete.\n";
     std::cout << "Press any key to send goal position command (Press ESC to exit)...\n";
 
@@ -33,16 +36,16 @@ int main() {
         }
         
         // Send the pre-configured goal position to each motor.
-        arm.send(arm.motors[0].dxl_goal_position[index]);
+        arm.send(goals);
         
         // Read and display the present positions from each motor.
         arm.recv();
         
         std::cout << "\nPress any key to send command again or ESC to exit...\n";
         if(index == 0){
-          index = 1;
+          goals[6] = 0;
         }else{
-          index = 0;
+          goals[6] = 4095/4;
         }
     }
     

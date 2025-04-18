@@ -1,13 +1,10 @@
 #ifndef ARMDRIVER_H
 #define ARMDRIVER_H
 
-#if defined(__linux__) || defined(__APPLE__)
+
 #include <fcntl.h>
 #include <termios.h>
 #define STDIN_FILENO 0
-#elif defined(_WIN32) || defined(_WIN64)
-#include <conio.h>
-#endif
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -17,7 +14,6 @@
 
 // Define a simple struct for a motor.
 struct armMotor {
-    int dxl_goal_position[2];
     uint8_t DXL_ID;
     int32_t dxl_present_position;
 };
@@ -25,18 +21,36 @@ struct armMotor {
 class ArmInterface {
 public:
     ArmInterface();
-    ~ArmInterface() {}
+    ~ArmInterface() {
+        delete groupSyncRead;
+        delete groupSyncWrite;
+    }
 
-    void setup();
-    void recv();
-    void send(int32_t goal);
-    void exit();
+    bool setup();
+    bool recv();
+    bool send(const std::vector<int32_t>& goals);
+    bool exit();
 
     std::array<armMotor, 7> motors;
+
+    int getch()
+    {
+        struct termios oldt, newt;
+        int ch;
+        tcgetattr(STDIN_FILENO, &oldt);
+        newt = oldt;
+        newt.c_lflag &= ~(ICANON | ECHO);
+        tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+        ch = getchar();
+        tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+        return ch;
+    }
 
 private:
     dynamixel::PortHandler *portHandler;
     dynamixel::PacketHandler *packetHandler;
+    dynamixel::GroupSyncWrite *groupSyncWrite;
+    dynamixel::GroupSyncRead *groupSyncRead;
     uint16_t ADDR_TORQUE_ENABLE = 64;
     uint16_t ADDR_GOAL_POSITION = 116;
     uint16_t ADDR_PRESENT_POSITION = 132;
@@ -44,10 +58,12 @@ private:
     int MAXIMUM_POSITION_LIMIT = 4095; // Refer to the Maximum Position Limit of product eManual.
     int BAUDRATE = 57600;
     int dxl_comm_result = -1001;
-    float protocol_version = 2.0;
+    float PROTOCOL_VERSION = 2.0;
     int32_t dxl_present_position = 0;
     uint8_t dxl_error = 0;
     char *port_name = (char*)"/dev/ttyUSB0";
+    bool dxl_addparam_result = false;  
+    bool dxl_getdata_result = false;   
 };
 
 #endif // ARMDRIVER_H
