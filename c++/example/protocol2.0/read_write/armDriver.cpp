@@ -120,6 +120,7 @@ bool ArmInterface::recv() {
 
     // Syncread present position
     dxl_comm_result = groupSyncRead->txRxPacket();
+    
     if (dxl_comm_result != COMM_SUCCESS) packetHandler->getTxRxResult(dxl_comm_result);
 
     for(size_t i = 0; i < motors.size(); ++i){
@@ -137,10 +138,17 @@ bool ArmInterface::recv() {
     
 }
 
-bool ArmInterface::exit() {
-     for(size_t i = 0; i < motors.size(); ++i){
+bool ArmInterface::exit(int32_t t) {
+    if (t > 0){
+
+        control(exitPos, t);
+
+    }
+    
+
+    for(size_t i = 0; i < motors.size(); ++i){
         // Disable Dynamixel#1 Torque
-        dxl_comm_result = packetHandler->write1ByteTxRx(portHandler, motors[i].DXL_ID, ADDR_PRESENT_POSITION, 0, &dxl_error);
+        dxl_comm_result = packetHandler->write1ByteTxRx(portHandler, motors[i].DXL_ID, ADDR_TORQUE_ENABLE, 0, &dxl_error);
         if (dxl_comm_result != COMM_SUCCESS)
         {
             packetHandler->getTxRxResult(dxl_comm_result);
@@ -149,10 +157,60 @@ bool ArmInterface::exit() {
         {
             packetHandler->getRxPacketError(dxl_error);
         }
-     }
+    }
     // Close port
     portHandler->closePort();
 
     return 1;
     
+}
+
+bool ArmInterface::control(const std::vector<int32_t>& goals, int32_t t){
+
+    if (t > 0){
+
+        auto start_time = std::chrono::steady_clock::now();
+        std::vector<int32_t> inBet(7, 0);
+        std::vector<int32_t> oldBet(7, 0);
+
+        for(size_t i = 0; i < motors.size(); ++i){
+            oldBet[i] = motors[i].dxl_present_position;
+        }
+
+        do{
+            auto now = std::chrono::steady_clock::now();
+            std::chrono::duration<double> elapsed_seconds = now - start_time;
+            double time = elapsed_seconds.count();
+            if (time > t){
+                time = t;
+            }
+            for(size_t i = 0; i < motors.size(); ++i){
+                inBet[i] = (time/t)*(goals[i]) + (1 - time/t)*(oldBet[i]);
+            }
+
+            send(inBet);
+            
+            recv();
+        }while(getError(goals));
+
+    }else{
+        do{
+          send(goals);
+          recv();
+        }while(getError(goals));
+    }
+
+}
+
+
+bool ArmInterface::getError(const std::vector<int32_t>& goals){
+    double error = 0;
+    for(size_t i = 0; i < motors.size(); ++i){
+        error = motors[i].dxl_present_position - goals[i];
+        if (error > DXL_MOVING_STATUS_THRESHOLD){
+            return 1;
+        }
+        printf("[ID:%03d] GoalPos:%03d  PresPos:%03d\n", motors[i].DXL_ID, goals[i], motors[i].dxl_present_position);
+    }
+    return 0;
 }

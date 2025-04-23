@@ -22,7 +22,7 @@ int main() {
     // Create an instance of ArmInterface. The constructor will call setup().
     ArmInterface arm;
 
-    std::vector<int32_t> goals = {0, 0, 0, 0, 0, 0, 4095/4};
+    std::vector<int32_t> goals = {2048, 2048, 2048, 2048, 2048, 2048, 2048, 2048};
 
 
     std::cout << "Initialization complete.\n";
@@ -34,23 +34,21 @@ int main() {
         if (key == 27) {
             break;
         }
+        arm.control(goals, 5);
         
-        // Send the pre-configured goal position to each motor.
-        arm.send(goals);
-        
-        // Read and display the present positions from each motor.
-        arm.recv();
         
         std::cout << "\nPress any key to send command again or ESC to exit...\n";
         if(index == 0){
-          goals[6] = 0;
+          goals[6] = 1024;
+          index = 1;
         }else{
-          goals[6] = 4095/4;
+          goals[6] = 2048;
+          index = 0;
         }
     }
     
     // Disable torque on each motor and close the communication port.
-    arm.exit();
+    arm.exit(10);
 
     std::cout << "Program terminated. Press any key to exit.\n";
     getch();
