@@ -22,7 +22,7 @@ int main() {
     // Create an instance of ArmInterface. The constructor will call setup().
     ArmInterface arm;
 
-    std::vector<int32_t> goals = {2048, 2048, 2048, 2048, 2048, 2048, 2048, 2048};
+    std::vector<int32_t> goals = {2048/2, 2048, 2048, 2048, 2048, 2048, 2048};
 
 
     std::cout << "Initialization complete.\n";

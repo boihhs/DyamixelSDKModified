@@ -36,7 +36,7 @@ public:
     bool exit(int32_t t);
     bool getError(const std::vector<int32_t>& goals);
 
-    std::array<armMotor, 8> motors;
+    std::array<armMotor, 7> motors;
 
     int getch()
     {
@@ -62,7 +62,7 @@ private:
     int MINIMUM_POSITION_LIMIT = 0;    // Refer to the Minimum Position Limit of product eManual.
     int MAXIMUM_POSITION_LIMIT = 4095; // Refer to the Maximum Position Limit of product eManual.
     int BAUDRATE = 1000000;
-    int DXL_MOVING_STATUS_THRESHOLD = 20;
+    int DXL_MOVING_STATUS_THRESHOLD = 50;
     int dxl_comm_result = -1001;
     float PROTOCOL_VERSION = 2.0;
     int32_t dxl_present_position = 0;
@@ -71,7 +71,9 @@ private:
     bool dxl_addparam_result = false;  
     bool dxl_getdata_result = false;  
 
-    std::vector<int32_t> exitPos = {2048, 880, 880, 3034, 3034, 2015, 2210, 1048};
+    std::vector<int32_t> exitPos = {2056, 802, 802, 3107, 3107, 2000, 2228};
+    std::vector<int32_t> startPos = {2048, 2048, 2048, 2048, 2048, 2048, 2048};
+
 
 };
 

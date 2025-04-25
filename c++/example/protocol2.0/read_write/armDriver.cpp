@@ -1,6 +1,12 @@
 #include "armDriver.h"
 #include <iostream>
 
+'''
+Used https://emanual.robotis.com/docs/en/software/dynamixel/dynamixel_sdk/sample_code/cpp_sync_read_write_protocol_2_0/#cpp-sync-read-write-protocol-20
+as inspiration and copied some things.
+Made by Leo Benaharon
+'''
+
 ArmInterface::ArmInterface() {    
     setup();
 }
@@ -81,6 +87,8 @@ bool ArmInterface::setup() {
         }
     }
 
+    control(startPos, 5);
+
     return 1;
 }
 
@@ -132,6 +140,7 @@ bool ArmInterface::recv() {
             return 0;
         }
         motors[i].dxl_present_position = groupSyncRead->getData(motors[i].DXL_ID, ADDR_PRESENT_POSITION, 4);
+        //printf("[ID:%03d] PresPos:%03d\n", motors[i].DXL_ID, motors[i].dxl_present_position);
 
     }
     return 1;
@@ -140,7 +149,7 @@ bool ArmInterface::recv() {
 
 bool ArmInterface::exit(int32_t t) {
     if (t > 0){
-
+        control(startPos, 5);
         control(exitPos, t);
 
     }
@@ -166,7 +175,7 @@ bool ArmInterface::exit(int32_t t) {
 }
 
 bool ArmInterface::control(const std::vector<int32_t>& goals, int32_t t){
-
+    recv();
     if (t > 0){
 
         auto start_time = std::chrono::steady_clock::now();
@@ -191,6 +200,7 @@ bool ArmInterface::control(const std::vector<int32_t>& goals, int32_t t){
             send(inBet);
             
             recv();
+            
         }while(getError(goals));
 
     }else{
@@ -200,17 +210,19 @@ bool ArmInterface::control(const std::vector<int32_t>& goals, int32_t t){
         }while(getError(goals));
     }
 
+    return 1;
+
 }
 
 
 bool ArmInterface::getError(const std::vector<int32_t>& goals){
     double error = 0;
     for(size_t i = 0; i < motors.size(); ++i){
-        error = motors[i].dxl_present_position - goals[i];
+        error = std::abs(motors[i].dxl_present_position - goals[i]);
         if (error > DXL_MOVING_STATUS_THRESHOLD){
             return 1;
         }
-        printf("[ID:%03d] GoalPos:%03d  PresPos:%03d\n", motors[i].DXL_ID, goals[i], motors[i].dxl_present_position);
+        printf("[ID:%03d] Error:%03d\n", motors[i].DXL_ID, std::abs(goals[i] - motors[i].dxl_present_position));
     }
     return 0;
 }
